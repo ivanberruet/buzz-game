@@ -37,12 +37,18 @@ export default async function GameLobbyPage({
     .eq("status", "active")
     .single();
 
+
+  const {data: { user }} = await supabase.auth.getUser();
+
+  const isHost = user?.id === game.created_by;
+
   return (
   <LobbyClient
     gameId={game.id}
     roundId={round.id}
     code={code}
     initialPlayers={players ?? []}
-/>
+    isHost={isHost}
+  />
   );
 }

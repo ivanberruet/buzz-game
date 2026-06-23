@@ -16,6 +16,7 @@ type Props = {
   roundId: string;
   code: string;
   initialPlayers: Player[];
+  isHost: boolean;
 };
 
 type Buzz = {
@@ -29,6 +30,7 @@ export default function LobbyClient({
   roundId,
   code,
   initialPlayers,
+  isHost,
 }: Props) {
   const [players, setPlayers] = useState(initialPlayers);
   
