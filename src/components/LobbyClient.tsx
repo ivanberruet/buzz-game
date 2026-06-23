@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { buzz } from "@/actions/game-actions";
 
 type Player = {
   id: string;
@@ -11,12 +12,14 @@ type Player = {
 
 type Props = {
   gameId: string;
+  roundId: string;
   code: string;
   initialPlayers: Player[];
 };
 
 export default function LobbyClient({
   gameId,
+  roundId,
   code,
   initialPlayers,
 }: Props) {
@@ -105,6 +108,19 @@ export default function LobbyClient({
           </li>
         ))}
       </ul>
+
+      <form
+        action={async () => {
+          "use server";
+          await buzz(roundId);
+        }}
+      >
+        <button
+          className="mt-8 bg-red-600 text-white px-6 py-3 rounded"
+        >
+          BUZZ
+        </button>
+      </form>
     </div>
   );
 }

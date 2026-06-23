@@ -26,6 +26,16 @@ export async function createGame() {
     .select()
     .single();
 
+  const { error: roundError } = await supabase
+  .from("rounds")
+  .insert({
+    game_id: game.id,
+  });
+
+  if (roundError) {
+    throw roundError;
+  }
+
   if (error) {
     throw error;
   }
@@ -43,4 +53,38 @@ export async function createGame() {
   });
 
   redirect(`/lobby/${code}`);
+}
+
+export async function buzz(roundId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  const { data: existing } = await supabase
+    .from("buzzes")
+    .select("id")
+    .eq("round_id", roundId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existing) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("buzzes")
+    .insert({
+      round_id: roundId,
+      user_id: user.id,
+    });
+
+  if (error) {
+    throw error;
+  }
 }

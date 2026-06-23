@@ -30,11 +30,19 @@ export default async function GameLobbyPage({
     .eq("game_id", game.id)
     .order("joined_at");
 
+  const { data: round } = await supabase
+    .from("rounds")
+    .select("*")
+    .eq("game_id", game.id)
+    .eq("status", "active")
+    .single();
+
   return (
-    <LobbyClient
-      gameId={game.id}
-      code={code}
-      initialPlayers={players ?? []}
-    />
+  <LobbyClient
+    gameId={game.id}
+    roundId={round.id}
+    code={code}
+    initialPlayers={players ?? []}
+/>
   );
 }
