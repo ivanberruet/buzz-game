@@ -24,17 +24,18 @@ export default function LobbyClient({
     useState(initialPlayers);
 
   useEffect(() => {
+    const supabase = createClient();
+
+    let channel: ReturnType<typeof supabase.channel>;
+
     async function setup() {
-      const supabase = createClient();
-    
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
       console.log("SESSION", session);
 
-
-      const channel = supabase
+      channel = supabase
         .channel(`players-${gameId}`)
         .on(
           "postgres_changes",
@@ -42,7 +43,6 @@ export default function LobbyClient({
             event: "INSERT",
             schema: "public",
             table: "players",
-            // sin filtrar
           },
           async (payload) => {
             console.log("Realtime event:", payload);
@@ -61,11 +61,16 @@ export default function LobbyClient({
         .subscribe((status) => {
           console.log("Realtime status:", status);
         });
-        return () => {
+    }
+
+    setup();
+
+    return () => {
+      if (channel) {
         supabase.removeChannel(channel);
-        }
+      }
     };
-  }, [gameId]);
+  }, [gameId]);  
 
   useEffect(() => {
     const supabase = createClient();
