@@ -34,7 +34,7 @@ export default function LobbyClient({
           event: "*",
           schema: "public",
           table: "players",
-          filter: `game_id=eq.${gameId}`,
+          // sin filtrar
         },
         async (payload) => {
           console.log("Realtime event:", payload);
