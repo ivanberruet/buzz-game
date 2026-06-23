@@ -77,7 +77,6 @@ export default function LobbyClient({
             table: "players",
           },
           async (payload) => {
-            console.log("Realtime event:", payload);
 
             const { data } = await supabase
               .from("players")
@@ -90,9 +89,7 @@ export default function LobbyClient({
             }
           }
         )
-        .subscribe((status) => {
-          console.log("Realtime status:", status);
-        });
+        .subscribe();
 
       buzzChannel = supabase
         .channel(`buzzes-${activeRoundId}`)
@@ -104,24 +101,18 @@ export default function LobbyClient({
             table: "buzzes",
           },
           async () => {
-            console.log("BUZZ REALTIME DISPARADO");
-
             const { data } = await supabase
               .from("buzzes")
               .select("*")
               .eq("round_id", activeRoundId)
               .order("pressed_at");
 
-            console.log("BUZZES", data);
-
             if (data) {
               setBuzzes(data);
             }
           }
         )
-        .subscribe((status) => {
-          console.log("Buzz realtime:", status);
-        });
+        .subscribe();
 
       roundsChannel = supabase
         .channel(`rounds-${gameId}`)
@@ -198,7 +189,6 @@ export default function LobbyClient({
       <button
         disabled={alreadyBuzzed}
         onClick={async () => {
-          console.log("ACTIVE ROUND:", activeRoundId);
 
           const response = await fetch("/api/buzz", {
             method: "POST",
