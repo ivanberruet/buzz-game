@@ -24,39 +24,64 @@ export default function LobbyClient({
     useState(initialPlayers);
 
   useEffect(() => {
+    async function setup() {
+      const supabase = createClient();
+    
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      console.log("SESSION", session);
+
+
+      const channel = supabase
+        .channel(`players-${gameId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "players",
+            // sin filtrar
+          },
+          async (payload) => {
+            console.log("Realtime event:", payload);
+
+            const { data } = await supabase
+              .from("players")
+              .select("*")
+              .eq("game_id", gameId)
+              .order("joined_at");
+
+            if (data) {
+              setPlayers(data);
+            }
+          }
+        )
+        .subscribe((status) => {
+          console.log("Realtime status:", status);
+        });
+        return () => {
+        supabase.removeChannel(channel);
+        }
+    };
+  }, [gameId]);
+
+  useEffect(() => {
     const supabase = createClient();
 
     const channel = supabase
-      .channel(`players-${gameId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "players",
-          // sin filtrar
-        },
-        async (payload) => {
-          console.log("Realtime event:", payload);
-
-          const { data } = await supabase
-            .from("players")
-            .select("*")
-            .eq("game_id", gameId)
-            .order("joined_at");
-
-          if (data) {
-            setPlayers(data);
-          }
-        }
-      )
+      .channel("debug-channel")
       .subscribe((status) => {
-        console.log("Realtime status:", status);
+        console.log("DEBUG CHANNEL:", status);
       });
-      return () => {
+
+    console.log("Channels:", supabase.getChannels());
+
+    return () => {
       supabase.removeChannel(channel);
     };
-  }, [gameId]);
+  }, []);
 
   return (
     <div className="p-8">
