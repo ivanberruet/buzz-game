@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { buzz } from "@/actions/game-actions";
+// import { buzz } from "@/actions/game-actions";
 
 type Player = {
   id: string;
@@ -109,7 +109,7 @@ export default function LobbyClient({
         ))}
       </ul>
 
-      <form
+      {/* <form
         action={async () => {
           "use server";
           await buzz(roundId);
@@ -120,7 +120,7 @@ export default function LobbyClient({
         >
           BUZZ
         </button>
-      </form>
+      </form> */}
     </div>
   );
 }
