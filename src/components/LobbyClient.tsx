@@ -215,6 +215,33 @@ export default function LobbyClient({
           : "BUZZ"}
       </button>
 
+      {isHost && (
+        <button
+          onClick={async () => {
+            const response = await fetch(
+              "/api/new-round",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  gameId,
+                  roundId: activeRoundId,
+                }),
+              }
+            );
+
+            const result = await response.json();
+
+            console.log(result);
+          }}
+          className="ml-4 bg-blue-600 text-white px-6 py-3 rounded"
+        >
+          Nueva ronda
+        </button>
+      )}
+
 
       <h2 className="mt-8 text-lg font-bold">
         Orden de respuesta
