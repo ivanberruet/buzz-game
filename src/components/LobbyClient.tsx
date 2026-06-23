@@ -37,6 +37,8 @@ export default function LobbyClient({
   const [buzzes, setBuzzes] = useState<Buzz[]>([]);
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  const [activeRoundId, setActiveRoundId] = useState(roundId);
 
   const alreadyBuzzed = buzzes.some(
     (buzz) => buzz.user_id === currentUserId
@@ -47,6 +49,7 @@ export default function LobbyClient({
 
     let channel: ReturnType<typeof supabase.channel>;
     let buzzChannel: ReturnType<typeof supabase.channel>;
+    let roundsChannel: ReturnType<typeof supabase.channel>;
 
     async function setup() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -57,7 +60,7 @@ export default function LobbyClient({
       const { data: buzzData } = await supabase
         .from("buzzes")
         .select("*")
-        .eq("round_id", roundId)
+        .eq("round_id", activeRoundId)
         .order("pressed_at");
 
       if (buzzData) {
@@ -92,7 +95,7 @@ export default function LobbyClient({
         });
 
       buzzChannel = supabase
-        .channel(`buzzes-${roundId}`)
+        .channel(`buzzes-${activeRoundId}`)
         .on(
           "postgres_changes",
           {
@@ -104,7 +107,7 @@ export default function LobbyClient({
             const { data } = await supabase
               .from("buzzes")
               .select("*")
-              .eq("round_id", roundId)
+              .eq("round_id", activeRoundId)
               .order("pressed_at");
 
             if (data) {
@@ -115,7 +118,34 @@ export default function LobbyClient({
         .subscribe((status) => {
           console.log("Buzz realtime:", status);
         });
-        
+
+      roundsChannel = supabase
+        .channel(`rounds-${gameId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "rounds",
+          },
+          async () => {
+            const { data } = await supabase
+              .from("rounds")
+              .select("*")
+              .eq("game_id", gameId)
+              .eq("status", "active")
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .single();
+
+            if (data) {
+              setActiveRoundId(data.id);
+              setBuzzes([]);
+            }
+          }
+        )
+        .subscribe();
+      
     }
 
     setup();
@@ -128,8 +158,12 @@ export default function LobbyClient({
       if (buzzChannel) {
         supabase.removeChannel(buzzChannel);
       }
+
+      if (roundsChannel) {
+        supabase.removeChannel(roundsChannel);
+      }
     };
-  }, [gameId, roundId]);  
+  }, [gameId, activeRoundId]);  
 
 
   return (
@@ -137,6 +171,10 @@ export default function LobbyClient({
       <h1 className="text-2xl font-bold">
         Código: {code}
       </h1>
+
+      <p className="mt-2 text-gray-500">
+        Ronda: {activeRoundId.slice(0, 8)}
+      </p>
 
       <h2 className="mt-6 text-lg">
         Jugadores
@@ -162,7 +200,7 @@ export default function LobbyClient({
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              roundId,
+              activeRoundId,
             }),
           });
 
