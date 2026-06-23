@@ -34,6 +34,12 @@ export default function LobbyClient({
   
   const [buzzes, setBuzzes] = useState<Buzz[]>([]);
 
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  const alreadyBuzzed = buzzes.some(
+    (buzz) => buzz.user_id === currentUserId
+  );
+
   useEffect(() => {
     const supabase = createClient();
 
@@ -42,8 +48,9 @@ export default function LobbyClient({
 
     async function setup() {
       const { data: { session } } = await supabase.auth.getSession();
-
-      console.log("SESSION", session);
+      if (session?.user?.id) {
+        setCurrentUserId(session.user.id);
+      }
 
       const { data: buzzData } = await supabase
         .from("buzzes")
@@ -137,11 +144,15 @@ export default function LobbyClient({
         {players.map((player) => (
           <li key={player.id}>
             {player.display_name}
+            {buzzes.some(
+              (b) => b.user_id === player.user_id
+            ) && " ✅"}
           </li>
         ))}
       </ul>
 
       <button
+        disabled={alreadyBuzzed}
         onClick={async () => {
           const response = await fetch("/api/buzz", {
             method: "POST",
@@ -157,9 +168,11 @@ export default function LobbyClient({
 
           console.log(result);
         }}
-        className="mt-8 bg-red-600 text-white px-6 py-3 rounded"
+        className="mt-8 bg-red-600 text-white px-6 py-3 rounded disabled:opacity-50"
       >
-        BUZZ
+        {alreadyBuzzed
+          ? "Ya respondiste"
+          : "BUZZ"}
       </button>
 
 
@@ -167,12 +180,24 @@ export default function LobbyClient({
         Orden de respuesta
       </h2>
 
-      <ol className="mt-3">
-        {buzzes.map((buzz, index) => (
-          <li key={buzz.id}>
-            {index + 1}. {buzz.user_id}
-          </li>
-        ))}
+      <ol className="mt-3 space-y-2">
+        {buzzes.map((buzz, index) => {
+          const player = players.find(
+            (p) => p.user_id === buzz.user_id
+          );
+
+          const medal =
+            index === 0 ? "🥇" :
+            index === 1 ? "🥈" :
+            index === 2 ? "🥉" :
+            `${index + 1}.`;
+
+          return (
+            <li key={buzz.id}>
+              {medal} {player?.display_name ?? "Jugador"}
+            </li>
+          );
+        })}
       </ol>
     </div>
   );
