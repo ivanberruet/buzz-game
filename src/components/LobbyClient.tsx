@@ -31,7 +31,7 @@ export default function LobbyClient({
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT",
           schema: "public",
           table: "players",
           // sin filtrar
