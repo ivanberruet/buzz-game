@@ -36,7 +36,9 @@ export default function LobbyClient({
           table: "players",
           filter: `game_id=eq.${gameId}`,
         },
-        async () => {
+        async (payload) => {
+          console.log("Realtime event:", payload);
+
           const { data } = await supabase
             .from("players")
             .select("*")
@@ -48,9 +50,10 @@ export default function LobbyClient({
           }
         }
       )
-      .subscribe();
-
-    return () => {
+      .subscribe((status) => {
+        console.log("Realtime status:", status);
+      });
+      return () => {
       supabase.removeChannel(channel);
     };
   }, [gameId]);
