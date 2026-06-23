@@ -199,14 +199,14 @@ export default function LobbyClient({
         disabled={alreadyBuzzed}
         onClick={async () => {
           console.log("ACTIVE ROUND:", activeRoundId);
-          
+
           const response = await fetch("/api/buzz", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              activeRoundId,
+              roundId: activeRoundId,
             }),
           });
 
