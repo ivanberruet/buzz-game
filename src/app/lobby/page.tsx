@@ -8,12 +8,8 @@ export default async function LobbyPage() {
   } = await supabase.auth.getUser();
 
   return (
-    <div className="p-8">
-      <h1>Lobby</h1>
-
-      <pre>
-        {JSON.stringify(user, null, 2)}
-      </pre>
-    </div>
+    <pre>
+      {JSON.stringify(user, null, 2)}
+    </pre>
   );
 }
