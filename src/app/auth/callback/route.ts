@@ -6,9 +6,14 @@ export async function GET(request: Request) {
 
   const code = searchParams.get("code");
 
+  console.log("CALLBACK CODE:", code);
+
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+
+    const result = await supabase.auth.exchangeCodeForSession(code);
+
+    console.log("SESSION RESULT:", result);
   }
 
   return NextResponse.redirect(origin);
