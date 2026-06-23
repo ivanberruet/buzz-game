@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import LobbyClient from "@/components/LobbyClient";
 
 type Props = {
   params: Promise<{
@@ -30,22 +31,10 @@ export default async function GameLobbyPage({
     .order("joined_at");
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold">
-        Código: {code}
-      </h1>
-
-      <h2 className="mt-6 text-lg">
-        Jugadores
-      </h2>
-
-      <ul className="mt-2">
-        {players?.map((player) => (
-          <li key={player.id}>
-            {player.display_name}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <LobbyClient
+      gameId={game.id}
+      code={code}
+      initialPlayers={players ?? []}
+    />
   );
 }
