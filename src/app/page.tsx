@@ -1,15 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import LoginButton from "@/components/LoginButton";
 
-export default async function HomePage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+export default function HomePage() {
   return (
-    <pre>
-      {JSON.stringify(user, null, 2)}
-    </pre>
+    <main className="flex min-h-screen items-center justify-center">
+      <LoginButton />
+    </main>
   );
 }
