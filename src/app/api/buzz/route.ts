@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   const { roundId } = await request.json();
-
+  console.log("ROUND ID RECIBIDO:", roundId);
+  
   const supabase = await createClient();
 
   const {

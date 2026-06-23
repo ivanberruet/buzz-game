@@ -104,11 +104,15 @@ export default function LobbyClient({
             table: "buzzes",
           },
           async () => {
+            console.log("BUZZ REALTIME DISPARADO");
+
             const { data } = await supabase
               .from("buzzes")
               .select("*")
               .eq("round_id", activeRoundId)
               .order("pressed_at");
+
+            console.log("BUZZES", data);
 
             if (data) {
               setBuzzes(data);
@@ -194,6 +198,8 @@ export default function LobbyClient({
       <button
         disabled={alreadyBuzzed}
         onClick={async () => {
+          console.log("ACTIVE ROUND:", activeRoundId);
+          
           const response = await fetch("/api/buzz", {
             method: "POST",
             headers: {
