@@ -109,18 +109,27 @@ export default function LobbyClient({
         ))}
       </ul>
 
-      {/* <form
-        action={async () => {
-          "use server";
-          await buzz(roundId);
+      <button
+        onClick={async () => {
+          const response = await fetch("/api/buzz", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              roundId,
+            }),
+          });
+
+          const result = await response.json();
+
+          console.log(result);
         }}
+        className="mt-8 bg-red-600 text-white px-6 py-3 rounded"
       >
-        <button
-          className="mt-8 bg-red-600 text-white px-6 py-3 rounded"
-        >
-          BUZZ
-        </button>
-      </form> */}
+        BUZZ
+      </button>
+      
     </div>
   );
 }
