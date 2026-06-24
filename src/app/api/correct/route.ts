@@ -47,12 +47,17 @@ export async function POST(
   console.log("SCORE", score);
 
   if (score) {
-    await supabase
+    const { error } = await supabase
       .from("scores")
       .update({
         points: score.points + 1,
       })
-      .eq("id", score.id);
+      .eq("game_id", gameId)
+      .eq("user_id", winner.user_id);
+
+    if (error) {
+      console.error(error);
+    }
   } else {
     console.log("INSERT SCORE");
     await supabase
