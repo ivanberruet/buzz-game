@@ -14,6 +14,7 @@ type Player = {
 type Props = {
   gameId: string;
   roundId: string;
+  currentPosition: number;
   code: string;
   initialPlayers: Player[];
   isHost: boolean;
@@ -33,6 +34,7 @@ type Score = {
 export default function LobbyClient({
   gameId,
   roundId,
+  currentPosition,
   code,
   initialPlayers,
   isHost,
@@ -46,6 +48,8 @@ export default function LobbyClient({
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   const [activeRoundId, setActiveRoundId] = useState(roundId);
+
+  const [currentTurn, setCurrentTurn] = useState(currentPosition);
 
   const alreadyBuzzed = buzzes.some(
     (buzz) => buzz.user_id === currentUserId
@@ -139,7 +143,7 @@ export default function LobbyClient({
         .on(
           "postgres_changes",
           {
-            event: "INSERT",
+            event: "*",
             schema: "public",
             table: "rounds",
           },
@@ -154,8 +158,17 @@ export default function LobbyClient({
               .single();
 
             if (data) {
-              setActiveRoundId(data.id);
-              setBuzzes([]);
+              const isNewRound =
+                data.id !== activeRoundId;
+
+              if (isNewRound) {
+                setActiveRoundId(data.id);
+                setBuzzes([]);
+              }
+
+              setCurrentTurn(
+                data.current_position
+              );
             }
           }
         )
@@ -207,12 +220,24 @@ export default function LobbyClient({
     };
   }, [gameId, activeRoundId]);  
 
+  const currentBuzz =
+  buzzes[currentTurn - 1];
+
+  const currentPlayer = players.find((p) =>
+    p.user_id === currentBuzz?.user_id
+  );
 
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold">
         Código: {code}
       </h1>
+
+      <div className="mt-6 p-4 border rounded">
+        <strong>Turno actual:</strong>{" "}
+        {currentPlayer?.display_name ??
+          "Esperando respuestas"}
+      </div>
 
       <h2 className="mt-6 text-lg font-bold">
         Clasificación General
@@ -326,7 +351,26 @@ export default function LobbyClient({
         >
           Nueva ronda
         </button>
+        
       )}
+
+      <button
+        onClick={async () => {
+          await fetch("/api/incorrect", {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              roundId: activeRoundId,
+            }),
+          });
+        }}
+        className="ml-4 bg-yellow-600 text-white px-6 py-3 rounded"
+      >
+        Incorrecta
+      </button>
 
 
       <h2 className="mt-8 text-lg font-bold">

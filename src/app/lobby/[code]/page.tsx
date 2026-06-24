@@ -46,6 +46,7 @@ export default async function GameLobbyPage({
   <LobbyClient
     gameId={game.id}
     roundId={round.id}
+    currentPosition={round.current_position}
     code={code}
     initialPlayers={players ?? []}
     isHost={isHost}
