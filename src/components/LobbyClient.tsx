@@ -164,7 +164,7 @@ export default function LobbyClient({
               if (isNewRound) {
                 setActiveRoundId(data.id);
                 setBuzzes([]);
-                
+
               }
 
               setCurrentTurn(
@@ -328,6 +328,7 @@ export default function LobbyClient({
       </button>
 
       {isHost && (
+        <>
         <button
           onClick={async () => {
             const response = await fetch(
@@ -353,27 +354,56 @@ export default function LobbyClient({
           Nueva ronda
         </button>
         
+        <button
+          onClick={async () => {
+            await fetch("/api/incorrect", {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify({
+                roundId: activeRoundId,
+              }),
+            });
+          }}
+          className="ml-4 bg-yellow-600 text-white px-6 py-3 rounded"
+        >
+          Incorrecta
+        </button>
+
+        <button
+          onClick={async () => {
+            const response =
+              await fetch(
+                "/api/correct",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type":
+                      "application/json",
+                  },
+                  body: JSON.stringify({
+                    gameId,
+                    roundId:
+                      activeRoundId,
+                  }),
+                }
+              );
+
+            const result =
+              await response.json();
+
+            console.log(result);
+          }}
+          className="ml-4 bg-green-600 text-white px-6 py-3 rounded"
+        >
+          Correcta
+        </button>
+
+        </>
       )}
-
-      <button
-        onClick={async () => {
-          await fetch("/api/incorrect", {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-            body: JSON.stringify({
-              roundId: activeRoundId,
-            }),
-          });
-        }}
-        className="ml-4 bg-yellow-600 text-white px-6 py-3 rounded"
-      >
-        Incorrecta
-      </button>
-
-
+    
       <h2 className="mt-8 text-lg font-bold">
         Orden de respuesta
       </h2>
