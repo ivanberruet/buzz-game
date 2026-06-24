@@ -4,16 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 export async function POST(
   request: Request
 ) {
-  const {
-    gameId,
-    roundId,
-  } = await request.json();
+  const {gameId, roundId} = await request.json();
 
-  const supabase =
-    await createClient();
+  const supabase = await createClient();
 
-  const { data: round } =
-    await supabase
+  const { data: round } = await supabase
       .from("rounds")
       .select("*")
       .eq("id", roundId)
@@ -26,17 +21,14 @@ export async function POST(
     );
   }
 
-  const { data: buzzes } =
-    await supabase
+  const { data: buzzes } = await supabase
       .from("buzzes")
       .select("*")
       .eq("round_id", roundId)
       .order("pressed_at");
 
-  const winner =
-    buzzes?.[
-      round.current_position - 1
-    ];
+  const winner = buzzes?.[round.current_position - 1];
+  console.log("WINNER", winner);
 
   if (!winner) {
     return NextResponse.json(
@@ -45,13 +37,14 @@ export async function POST(
     );
   }
 
-  const { data: score } =
-    await supabase
+  const { data: score } = await supabase
       .from("scores")
       .select("*")
       .eq("game_id", gameId)
       .eq("user_id", winner.user_id)
       .maybeSingle();
+    
+  console.log("SCORE", score);
 
   if (score) {
     await supabase
@@ -61,6 +54,7 @@ export async function POST(
       })
       .eq("id", score.id);
   } else {
+    console.log("INSERT SCORE");
     await supabase
       .from("scores")
       .insert({
@@ -70,6 +64,7 @@ export async function POST(
       });
   }
 
+  console.log("UPDATE SCORE");
   await supabase
     .from("rounds")
     .update({
