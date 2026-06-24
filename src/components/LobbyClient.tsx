@@ -164,6 +164,7 @@ export default function LobbyClient({
               if (isNewRound) {
                 setActiveRoundId(data.id);
                 setBuzzes([]);
+                
               }
 
               setCurrentTurn(
