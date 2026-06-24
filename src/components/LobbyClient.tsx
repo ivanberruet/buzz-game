@@ -395,6 +395,7 @@ export default function LobbyClient({
               await response.json();
 
             console.log(result);
+            console.log('CORRECT ROUND', activeRoundId)
           }}
           className="ml-4 bg-green-600 text-white px-6 py-3 rounded"
         >
