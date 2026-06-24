@@ -47,6 +47,12 @@ export async function joinGame(formData: FormData) {
       user_id: user.id,
       display_name: playerName,
     });
+
+    await supabase.from("scores").upsert({
+      game_id: game.id,
+      user_id: user.id,
+      points: 0,
+    });
   }
 
   redirect(`/lobby/${code}`);
