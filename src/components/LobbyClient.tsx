@@ -25,6 +25,11 @@ type Buzz = {
   pressed_at: string;
 };
 
+type Score = {
+  user_id: string;
+  points: number;
+};
+
 export default function LobbyClient({
   gameId,
   roundId,
@@ -35,6 +40,8 @@ export default function LobbyClient({
   const [players, setPlayers] = useState(initialPlayers);
   
   const [buzzes, setBuzzes] = useState<Buzz[]>([]);
+
+  const [scores, setScores] = useState<Score[]>([]);
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
@@ -50,6 +57,7 @@ export default function LobbyClient({
     let channel: ReturnType<typeof supabase.channel>;
     let buzzChannel: ReturnType<typeof supabase.channel>;
     let roundsChannel: ReturnType<typeof supabase.channel>;
+    let scoresChannel: ReturnType<typeof supabase.channel>;
 
     async function setup() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -57,6 +65,7 @@ export default function LobbyClient({
         setCurrentUserId(session.user.id);
       }
 
+      // BUZZES
       const { data: buzzData } = await supabase
         .from("buzzes")
         .select("*")
@@ -66,7 +75,19 @@ export default function LobbyClient({
       if (buzzData) {
         setBuzzes(buzzData);
       }
+      
+      //SCORES
+      const { data: scoreData } = await supabase
+        .from("scores")
+        .select("*")
+        .eq("game_id", gameId)
+        .order("points", { ascending: false });
 
+      if (scoreData) {
+        setScores(scoreData);
+      }
+
+      //REALTIME CHANNELS
       channel = supabase
         .channel(`players-${gameId}`)
         .on(
@@ -76,8 +97,7 @@ export default function LobbyClient({
             schema: "public",
             table: "players",
           },
-          async (payload) => {
-
+          async () => {
             const { data } = await supabase
               .from("players")
               .select("*")
@@ -140,7 +160,30 @@ export default function LobbyClient({
           }
         )
         .subscribe();
-      
+
+      scoresChannel = supabase
+        .channel(`scores-${gameId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "scores",
+          },
+          async () => {
+            const { data } = await supabase
+              .from("scores")
+              .select("*")
+              .eq("game_id", gameId)
+              .order("points", { ascending: false });
+
+            if (data) {
+              setScores(data);
+            }
+          }
+        )
+        .subscribe();
+            
     }
 
     setup();
@@ -157,6 +200,10 @@ export default function LobbyClient({
       if (roundsChannel) {
         supabase.removeChannel(roundsChannel);
       }
+
+      if (scoresChannel) {
+        supabase.removeChannel(scoresChannel);
+      }
     };
   }, [gameId, activeRoundId]);  
 
@@ -166,6 +213,49 @@ export default function LobbyClient({
       <h1 className="text-2xl font-bold">
         Código: {code}
       </h1>
+
+      <h2 className="mt-6 text-lg font-bold">
+        Clasificación General
+      </h2>
+
+      <table className="mt-2 border-collapse">
+        <thead>
+          <tr>
+            <th className="pr-6 text-left">
+              Pos
+            </th>
+
+            <th className="pr-6 text-left">
+              Jugador
+            </th>
+
+            <th className="text-left">
+              Puntos
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {scores.map((score, index) => {
+            const player = players.find(
+              (p) => p.user_id === score.user_id
+            );
+
+            return (
+              <tr key={score.user_id}>
+                <td>{index + 1}</td>
+
+                <td>
+                  {player?.display_name ??
+                    "Desconocido"}
+                </td>
+
+                <td>{score.points}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
 
       <p className="mt-2 text-gray-500">
         Ronda: {activeRoundId.slice(0, 8)}
