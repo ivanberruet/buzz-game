@@ -42,6 +42,10 @@ export default async function GameLobbyPage({
 
   const isHost = user?.id === game.created_by;
 
+  const hostPlayer = players?.find(
+    (p) => p.user_id === game.created_by
+  );
+
   return (
   <LobbyClient
     gameId={game.id}
@@ -51,6 +55,7 @@ export default async function GameLobbyPage({
     initialPlayers={players ?? []}
     isHost={isHost}
     gameStatus={game.status}
+    hostName={hostPlayer?.display_name ?? "Host"}
   />
   );
 }

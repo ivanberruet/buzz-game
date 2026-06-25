@@ -19,6 +19,7 @@ type Props = {
   initialPlayers: Player[];
   isHost: boolean;
   gameStatus: string;
+  hostName: string;
 };
 
 type Buzz = {
@@ -44,7 +45,8 @@ export default function LobbyClient({
   code,
   initialPlayers,
   isHost,
-  gameStatus: initialGameStatus
+  gameStatus: initialGameStatus,
+  hostName
 }: Props) {
   const [players, setPlayers] = useState(initialPlayers);
   
@@ -65,6 +67,29 @@ export default function LobbyClient({
   const alreadyBuzzed = buzzes.some(
     (buzz) => buzz.user_id === currentUserId
   );
+
+  const sortedScores = [...scores].sort(
+    (a, b) => {
+      if (b.points !== a.points) {
+        return b.points - a.points;
+      }
+
+      const playerA = players.find(
+        (p) => p.user_id === a.user_id
+      );
+
+      const playerB = players.find(
+        (p) => p.user_id === b.user_id
+      );
+
+      return (
+        playerA?.display_name ?? ""
+      ).localeCompare(
+        playerB?.display_name ?? ""
+      );
+    }
+  );
+
 
   useEffect(() => {
     const supabase = createClient();
@@ -298,12 +323,19 @@ export default function LobbyClient({
     };
   }, [gameId, activeRoundId]);  
 
-  const currentBuzz =
-  buzzes[currentTurn - 1];
+  const currentBuzz = buzzes[currentTurn - 1];
 
   const currentPlayer = players.find((p) =>
     p.user_id === currentBuzz?.user_id
   );
+
+  const leader = sortedScores[0];
+
+  const leaderPlayer = players.find(
+    (p) => p.user_id === leader?.user_id
+  );
+
+  const roundFinished = gameStatus === "finished";
 
 
   if (gameStatus === "finished") {
@@ -323,7 +355,7 @@ export default function LobbyClient({
           </thead>
 
           <tbody>
-            {scores.map((score, index) => {
+            {sortedScores.map((score, index) => {
               const player = players.find(
                 (p) =>
                   p.user_id === score.user_id
@@ -351,19 +383,35 @@ export default function LobbyClient({
 
   return (
     <div className="p-8">
+      <p className="text-gray-400">
+        👑 Host: {hostName}
+      </p>
+
       <h1 className="text-2xl font-bold">
         Código: {code}
       </h1>
 
-      <div className="mt-6 p-4 border rounded">
-        <strong>Turno actual:</strong>{" "}
-        {currentPlayer?.display_name ??
-          "Esperando respuestas"}
+      <div className="mt-6 p-4 border rounded bg-yellow-100 text-black">
+        🎤 Respondiendo:
+        <strong className="ml-2">
+          {currentPlayer?.display_name ??
+            "Esperando respuestas"}
+        </strong>
       </div>
 
       <h2 className="mt-6 text-lg font-bold">
         Clasificación General
       </h2>
+
+      <div className="mt-3 p-3 border rounded">
+        🏆 Líder actual:
+        <strong className="ml-2">
+          {leaderPlayer?.display_name ??
+            "Sin líder"}
+        </strong>
+        {" "}
+        ({leader?.points ?? 0} pts)
+      </div>
 
       <table className="mt-2 border-collapse">
         <thead>
@@ -383,7 +431,7 @@ export default function LobbyClient({
         </thead>
 
         <tbody>
-          {scores.map((score, index) => {
+          {sortedScores.map((score, index) => {
             const player = players.find(
               (p) => p.user_id === score.user_id
             );
@@ -444,7 +492,7 @@ export default function LobbyClient({
       </ul>
 
       <button
-        disabled={alreadyBuzzed}
+        disabled={alreadyBuzzed || roundFinished}
         onClick={async () => {
 
           const response = await fetch("/api/buzz", {
@@ -463,9 +511,13 @@ export default function LobbyClient({
         }}
         className="mt-8 bg-red-600 text-white px-6 py-3 rounded disabled:opacity-50"
       >
-        {alreadyBuzzed
-          ? "Ya respondiste"
-          : "BUZZ"}
+        {
+          roundFinished
+            ? "Partida finalizada"
+            : alreadyBuzzed
+              ? "Ya respondiste"
+              : "BUZZ"
+        }
       </button>
 
       {isHost && (
@@ -597,15 +649,14 @@ export default function LobbyClient({
               ? "—"
               : `+${(diffMs / 1000).toFixed(3)}s`;
 
-          const isCurrentTurn =
-            index === currentTurn - 1;
+          const isCurrentTurn = index === currentTurn - 1;
 
           return (
             <li
               key={buzz.id}
               className={`flex justify-between items-center p-2 rounded ${
                 isCurrentTurn
-                  ? "bg-yellow-100 font-bold"
+                  ? "font-bold bg-yellow-100 text-black p-2 rounded"
                   : ""
               }`}
             >
