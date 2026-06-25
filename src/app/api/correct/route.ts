@@ -81,13 +81,17 @@ export async function POST(
       current_position: 1,
     });
 
-  await supabase
+  const { data, error } = await supabase
     .from("round_results")
     .insert({
       game_id: gameId,
       round_id: roundId,
       winner_user_id: winner.user_id,
-  });
+    })
+    .select();
+
+  console.log("ROUND RESULT", data);
+  console.log("ROUND RESULT ERROR", error);
 
   return NextResponse.json({
     success: true,
