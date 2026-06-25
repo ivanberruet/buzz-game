@@ -31,6 +31,11 @@ type Score = {
   points: number;
 };
 
+type RoundResult = {
+  id: string;
+  winner_user_id: string;
+};
+
 export default function LobbyClient({
   gameId,
   roundId,
@@ -51,6 +56,8 @@ export default function LobbyClient({
 
   const [currentTurn, setCurrentTurn] = useState(currentPosition);
 
+  const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
+
   const alreadyBuzzed = buzzes.some(
     (buzz) => buzz.user_id === currentUserId
   );
@@ -62,6 +69,7 @@ export default function LobbyClient({
     let buzzChannel: ReturnType<typeof supabase.channel>;
     let roundsChannel: ReturnType<typeof supabase.channel>;
     let scoresChannel: ReturnType<typeof supabase.channel>;
+    let resultsChannel: ReturnType<typeof supabase.channel>;
 
     async function setup() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -89,6 +97,17 @@ export default function LobbyClient({
 
       if (scoreData) {
         setScores(scoreData);
+      }
+
+      //RESULTS
+      const { data: results } = await supabase
+        .from("round_results")
+        .select("*")
+        .eq("game_id", gameId)
+        .order("created_at");
+
+      if (results) {
+        setRoundResults(results);
       }
 
       //REALTIME CHANNELS
@@ -197,6 +216,29 @@ export default function LobbyClient({
           }
         )
         .subscribe();
+
+      resultsChannel = supabase
+        .channel(`results-${gameId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "round_results",
+          },
+          async () => {
+            const { data } = await supabase
+              .from("round_results")
+              .select("*")
+              .eq("game_id", gameId)
+              .order("created_at");
+
+            if (data) {
+              setRoundResults(data);
+            }
+          }
+        )
+        .subscribe();
             
     }
 
@@ -217,6 +259,10 @@ export default function LobbyClient({
 
       if (scoresChannel) {
         supabase.removeChannel(scoresChannel);
+      }
+
+      if (resultsChannel) {
+        supabase.removeChannel(resultsChannel);
       }
     };
   }, [gameId, activeRoundId]);  
@@ -282,6 +328,26 @@ export default function LobbyClient({
           })}
         </tbody>
       </table>
+
+      <h2 className="mt-8 text-lg font-bold">
+        Historial de rondas
+      </h2>
+
+      <ul className="mt-3">
+        {roundResults.map((result, index) => {
+          const player = players.find(
+            (p) =>
+              p.user_id === result.winner_user_id
+          );
+
+          return (
+            <li key={result.id}>
+              Ronda {index + 1}:{" "}
+              {player?.display_name}
+            </li>
+          );
+        })}
+      </ul>
 
       <p className="mt-2 text-gray-500">
         Ronda: {activeRoundId.slice(0, 8)}

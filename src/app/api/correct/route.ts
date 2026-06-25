@@ -28,7 +28,6 @@ export async function POST(
       .order("pressed_at");
 
   const winner = buzzes?.[round.current_position - 1];
-  console.log("WINNER", winner);
 
   if (!winner) {
     return NextResponse.json(
@@ -44,7 +43,6 @@ export async function POST(
       .eq("user_id", winner.user_id)
       .maybeSingle();
     
-  console.log("SCORE", score);
 
   if (score) {
     const { error } = await supabase
@@ -59,7 +57,6 @@ export async function POST(
       console.error(error);
     }
   } else {
-    console.log("INSERT SCORE");
     await supabase
       .from("scores")
       .insert({
@@ -69,7 +66,6 @@ export async function POST(
       });
   }
 
-  console.log("UPDATE SCORE");
   await supabase
     .from("rounds")
     .update({
@@ -84,6 +80,14 @@ export async function POST(
       status: "active",
       current_position: 1,
     });
+
+  await supabase
+    .from("round_results")
+    .insert({
+      game_id: gameId,
+      round_id: roundId,
+      winner_user_id: winner.user_id,
+  });
 
   return NextResponse.json({
     success: true,
