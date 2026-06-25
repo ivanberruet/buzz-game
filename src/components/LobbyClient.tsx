@@ -409,7 +409,7 @@ export default function LobbyClient({
         Orden de respuesta
       </h2>
 
-      <ol className="mt-3 space-y-2">
+      <ol className="mt-3 space-y-1 border rounded p-3">
         {buzzes.map((buzz, index) => {
           const player = players.find(
             (p) => p.user_id === buzz.user_id
@@ -421,9 +421,39 @@ export default function LobbyClient({
             index === 2 ? "🥉" :
             `${index + 1}.`;
 
+          const firstBuzzTime =
+            buzzes.length > 0
+              ? new Date(buzzes[0].pressed_at).getTime()
+              : 0;
+
+          const diffMs =
+            new Date(buzz.pressed_at).getTime() -
+            firstBuzzTime;
+
+          const diffText =
+            index === 0
+              ? "—"
+              : `+${(diffMs / 1000).toFixed(3)}s`;
+
+          const isCurrentTurn =
+            index === currentTurn - 1;
+
           return (
-            <li key={buzz.id}>
-              {medal} {player?.display_name ?? "Jugador"}
+            <li
+              key={buzz.id}
+              className={`flex justify-between items-center p-2 rounded ${
+                isCurrentTurn
+                  ? "bg-yellow-100 font-bold"
+                  : ""
+              }`}
+            >
+              <span>
+                {medal} {player?.display_name ?? "Jugador"}
+              </span>
+
+              <span className="text-gray-500">
+                {diffText}
+              </span>
             </li>
           );
         })}
