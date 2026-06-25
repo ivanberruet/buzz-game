@@ -18,6 +18,7 @@ type Props = {
   code: string;
   initialPlayers: Player[];
   isHost: boolean;
+  gameStatus: string;
 };
 
 type Buzz = {
@@ -43,6 +44,7 @@ export default function LobbyClient({
   code,
   initialPlayers,
   isHost,
+  gameStatus: initialGameStatus
 }: Props) {
   const [players, setPlayers] = useState(initialPlayers);
   
@@ -58,6 +60,8 @@ export default function LobbyClient({
 
   const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
 
+  const [gameStatus, setGameStatus] = useState(initialGameStatus);
+
   const alreadyBuzzed = buzzes.some(
     (buzz) => buzz.user_id === currentUserId
   );
@@ -70,6 +74,7 @@ export default function LobbyClient({
     let roundsChannel: ReturnType<typeof supabase.channel>;
     let scoresChannel: ReturnType<typeof supabase.channel>;
     let resultsChannel: ReturnType<typeof supabase.channel>;
+    let gameChannel: ReturnType<typeof supabase.channel>;
 
     async function setup() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -239,7 +244,29 @@ export default function LobbyClient({
           }
         )
         .subscribe();
-            
+        
+      gameChannel = supabase
+        .channel(`game-${gameId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "games",
+          },
+          async () => {
+            const { data } = await supabase
+              .from("games")
+              .select("status")
+              .eq("id", gameId)
+              .single();
+
+            if (data) {
+              setGameStatus(data.status);
+            }
+          }
+        )
+        .subscribe();
     }
 
     setup();
@@ -264,6 +291,10 @@ export default function LobbyClient({
       if (resultsChannel) {
         supabase.removeChannel(resultsChannel);
       }
+
+      if (gameChannel) {
+        supabase.removeChannel(gameChannel);
+      }
     };
   }, [gameId, activeRoundId]);  
 
@@ -273,6 +304,50 @@ export default function LobbyClient({
   const currentPlayer = players.find((p) =>
     p.user_id === currentBuzz?.user_id
   );
+
+
+  if (gameStatus === "finished") {
+    return (
+      <div className="p-8">
+        <h1 className="text-3xl font-bold">
+          🏆 Resultado Final
+        </h1>
+
+        <table className="mt-6">
+          <thead>
+            <tr>
+              <th>Pos</th>
+              <th>Jugador</th>
+              <th>Puntos</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {scores.map((score, index) => {
+              const player = players.find(
+                (p) =>
+                  p.user_id === score.user_id
+              );
+
+              return (
+                <tr
+                  key={score.user_id}
+                >
+                  <td>{index + 1}</td>
+
+                  <td>
+                    {player?.display_name}
+                  </td>
+
+                  <td>{score.points}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
@@ -466,6 +541,27 @@ export default function LobbyClient({
           className="ml-4 bg-green-600 text-white px-6 py-3 rounded"
         >
           Correcta
+        </button>
+
+        <button
+          onClick={async () => {
+            await fetch(
+              "/api/finish-game",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                },
+                body: JSON.stringify({
+                  gameId,
+                }),
+              }
+            );
+          }}
+          className="ml-4 bg-black text-white px-6 py-3 rounded"
+        >
+          Finalizar partida
         </button>
 
         </>

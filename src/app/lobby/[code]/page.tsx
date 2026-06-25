@@ -50,6 +50,7 @@ export default async function GameLobbyPage({
     code={code}
     initialPlayers={players ?? []}
     isHost={isHost}
+    gameStatus={game.status}
   />
   );
 }
