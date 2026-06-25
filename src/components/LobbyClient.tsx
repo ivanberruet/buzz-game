@@ -123,6 +123,7 @@ export default function LobbyClient({
         .from("scores")
         .select("*")
         .eq("game_id", gameId)
+        .gt("points", 0)
         .order("points", { ascending: false });
 
       if (scoreData) {
@@ -238,6 +239,7 @@ export default function LobbyClient({
               .from("scores")
               .select("*")
               .eq("game_id", gameId)
+              .gt("points", 0)
               .order("points", { ascending: false });
 
             if (data) {
