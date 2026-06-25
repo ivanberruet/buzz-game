@@ -339,6 +339,32 @@ export default function LobbyClient({
 
   const roundFinished = gameStatus === "finished";
 
+  const playersWithScores = players .map((player) => {
+    const score = scores.find(
+      (s) => s.user_id === player.user_id
+    );
+
+    return {
+      user_id: player.user_id,
+      display_name: player.display_name,
+      points: score?.points ?? 0,
+    };
+  })
+  .sort((a, b) => b.points - a.points);
+
+  const maxPoints = Math.max(
+    ...playersWithScores.map(
+      (p) => p.points
+    ),
+    0
+  );
+
+  const leaders =
+    maxPoints === 0
+      ? []
+      : playersWithScores.filter(
+          (p) => p.points === maxPoints
+        );
 
   if (gameStatus === "finished") {
     return (
@@ -405,14 +431,17 @@ export default function LobbyClient({
         Clasificación General
       </h2>
 
-      <div className="mt-3 p-3 border rounded">
-        🏆 Líder actual:
-        <strong className="ml-2">
-          {leaderPlayer?.display_name ??
-            "Sin líder"}
-        </strong>
-        {" "}
-        ({leader?.points ?? 0} pts)
+      <div className="mt-4 p-4 border rounded">
+        <strong>Líder actual:</strong>{" "}
+
+        {leaders.length === 0
+          ? "Sin líder"
+          : leaders
+              .map((l) => l.display_name)
+              .join(", ")}
+
+        {leaders.length > 0 &&
+          ` (${maxPoints} pts)`}
       </div>
 
       <table className="mt-2 border-collapse">
@@ -433,24 +462,17 @@ export default function LobbyClient({
         </thead>
 
         <tbody>
-          {sortedScores.map((score, index) => {
-            const player = players.find(
-              (p) => p.user_id === score.user_id
-            );
-
-            return (
-              <tr key={score.user_id}>
+          {playersWithScores.map(
+            (player, index) => (
+              <tr key={player.user_id}>
                 <td>{index + 1}</td>
 
-                <td>
-                  {player?.display_name ??
-                    "Desconocido"}
-                </td>
+                <td>{player.display_name}</td>
 
-                <td>{score.points}</td>
+                <td>{player.points}</td>
               </tr>
-            );
-          })}
+            )
+          )}
         </tbody>
       </table>
 
