@@ -16,7 +16,7 @@ export default function CurrentTurn({
       {!hasBuzzes
         ? "Esperando respuestas"
         : noMorePlayers
-        ? "No quedan participantes"
+        ? "Esperando participantes"
         : currentPlayerName}
     </div>
   );
