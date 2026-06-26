@@ -22,9 +22,13 @@ export default function BuzzOrder({
     return null;
   }
 
-  const firstTime = new Date(
-    buzzes[0].pressed_at
-  ).getTime();
+  function formatDiff(ms: number) {
+    if (ms < 1000) {
+      return `+${Math.round(ms)} ms`;
+    }
+
+    return `+${(ms / 1000).toFixed(3)} s`;
+  }
 
   return (
     <>
@@ -55,10 +59,16 @@ export default function BuzzOrder({
               (p) => p.user_id === buzz.user_id
             );
 
+            const previousBuzz =
+              index > 0
+                ? buzzes[index - 1]
+                : null;
+
             const diff =
-              new Date(
-                buzz.pressed_at
-              ).getTime() - firstTime;
+              previousBuzz
+                ? new Date(buzz.pressed_at).getTime() -
+                  new Date(previousBuzz.pressed_at).getTime()
+                : 0;
 
             const medal =
               index === 0
@@ -86,9 +96,7 @@ export default function BuzzOrder({
                 <td className="text-right">
                   {index === 0
                     ? "—"
-                    : `+${(
-                        diff / 1000
-                      ).toFixed(3)} s`}
+                    : formatDiff(diff)}
                 </td>
               </tr>
             );
