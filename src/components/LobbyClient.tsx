@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import CurrentTurn from "./CurrentTurn";
+import LeaderCard from "./LeaderCard";
+import RankingTable from "./RankingTable";
+import PlayerList from "./PlayerList";
+import HostPanel from "./HostPanel";
+import BuzzOrder from "./BuzzOrder";
+import BuzzButton from "./BuzzButton";
 // import { buzz } from "@/actions/game-actions";
 
 type Player = {
@@ -341,23 +348,22 @@ export default function LobbyClient({
 
   const roundFinished = gameStatus === "finished";
 
-  const playersWithScores = players .map((player) => {
-    const score = scores.find(
-      (s) => s.user_id === player.user_id
-    );
+  const playersWithScores = players
+    .map((player) => {
+      const score = scores.find(
+        (s) => s.user_id === player.user_id
+      );
 
-    return {
-      user_id: player.user_id,
-      display_name: player.display_name,
-      points: score?.points ?? 0,
-    };
-  })
-  .sort((a, b) => b.points - a.points);
+      return {
+        user_id: player.user_id,
+        display_name: player.display_name,
+        points: score?.points ?? 0,
+      };
+    })
+    .sort((a, b) => b.points - a.points);
 
   const maxPoints = Math.max(
-    ...playersWithScores.map(
-      (p) => p.points
-    ),
+    ...playersWithScores.map((p) => p.points),
     0
   );
 
@@ -413,298 +419,54 @@ export default function LobbyClient({
 
   return (
     <div className="p-8">
-      <p className="text-gray-400">
-        👑 Host: {hostName}
-      </p>
-
       <h1 className="text-2xl font-bold">
         Código: {code}
       </h1>
 
-      <div className="mt-6 p-4 border rounded bg-yellow-100 text-black">
-        🎤 Respondiendo:
-        <strong className="ml-2">
-          {buzzes.length === 0
-            ? "Esperando respuestas"
-            : noMorePlayers
-            ? "Esperando nuevos buzzes..."
-            : currentPlayer?.display_name}
-        </strong>
-      </div>
+      <CurrentTurn
+        currentPlayerName={
+          currentPlayer?.display_name ??
+          "Esperando respuestas"
+        }
+        noMorePlayers={noMorePlayers}
+        hasBuzzes={buzzes.length > 0}
+      />
 
-      <h2 className="mt-6 text-lg font-bold">
-        Clasificación General
-      </h2>
+      <LeaderCard
+        leaders={leaders}
+      />
 
-      <div className="mt-4 p-4 border rounded">
-        <strong>Líder actual:</strong>{" "}
-
-        {leaders.length === 0
-          ? "Sin líder"
-          : leaders
-              .map((l) => l.display_name)
-              .join(", ")}
-
-        {leaders.length > 0 &&
-          ` (${maxPoints} pts)`}
-      </div>
-
-      <table className="mt-2 border-collapse">
-        <thead>
-          <tr>
-            <th className="pr-6 text-left">
-              Pos
-            </th>
-
-            <th className="pr-6 text-left">
-              Jugador
-            </th>
-
-            <th className="text-left">
-              Puntos
-            </th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {playersWithScores.map(
-            (player, index) => (
-              <tr key={player.user_id}>
-                <td>{index + 1}</td>
-
-                <td>{player.display_name}</td>
-
-                <td>{player.points}</td>
-              </tr>
-            )
-          )}
-        </tbody>
-      </table>
-
-      <h2 className="mt-8 text-lg font-bold">
-        Historial de rondas
-      </h2>
-
-      <ul className="mt-3">
-        {roundResults.map((result, index) => {
-          const player = players.find(
-            (p) =>
-              p.user_id === result.winner_user_id
-          );
-
-          return (
-            <li key={result.id}>
-              Ronda {index + 1}:{" "}
-              {player?.display_name}
-            </li>
-          );
-        })}
-      </ul>
+      <RankingTable
+        players={playersWithScores}
+      />
 
       <p className="mt-2 text-gray-500">
         Ronda: {activeRoundId.slice(0, 8)}
       </p>
 
-      <h2 className="mt-6 text-lg">
-        Jugadores
-      </h2>
+      <PlayerList
+        players={players}
+        buzzes={buzzes}
+      />
 
-      <ul className="mt-3">
-        {players.map((player) => (
-          <li key={player.id}>
-            {player.display_name}
-            {buzzes.some(
-              (b) => b.user_id === player.user_id
-            ) && " ✅"}
-          </li>
-        ))}
-      </ul>
-
-      <button
-        disabled={alreadyBuzzed || roundFinished}
-        onClick={async () => {
-
-          const response = await fetch("/api/buzz", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              roundId: activeRoundId,
-            }),
-          });
-
-          const result = await response.json();
-
-          console.log(result);
-        }}
-        className="mt-8 bg-red-600 text-white px-6 py-3 rounded disabled:opacity-50"
-      >
-        {
-          roundFinished
-            ? "Partida finalizada"
-            : alreadyBuzzed
-              ? "Ya respondiste"
-              : "BUZZ"
-        }
-      </button>
+      <BuzzButton
+        roundId={activeRoundId}
+        alreadyBuzzed={alreadyBuzzed}
+      />
 
       {isHost && (
-        <>
-         {!noMorePlayers && buzzes.length >0 && (
-            <>
-              <button
-                onClick={async () => {
-                  await fetch("/api/incorrect", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type":
-                        "application/json",
-                    },
-                    body: JSON.stringify({
-                      roundId: activeRoundId,
-                    }),
-                  });
-                }}
-                className="ml-4 bg-yellow-600 text-white px-6 py-3 rounded"
-              >
-                Incorrecta
-              </button>
-
-              <button
-                onClick={async () => {
-                  const response =
-                    await fetch(
-                      "/api/correct",
-                      {
-                        method: "POST",
-                        headers: {
-                          "Content-Type":
-                            "application/json",
-                        },
-                        body: JSON.stringify({
-                          gameId,
-                          roundId:
-                            activeRoundId,
-                        }),
-                      }
-                    );
-
-                  const result =
-                    await response.json();
-
-                  console.log(result);
-                  console.log('CORRECT ROUND', activeRoundId)
-                }}
-                className="ml-4 bg-green-600 text-white px-6 py-3 rounded"
-              >
-                Correcta
-              </button>
-            </>
-         )}
-
-          <button
-            onClick={async () => {
-              const response = await fetch(
-                "/api/new-round",
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    gameId,
-                    roundId: activeRoundId,
-                  }),
-                }
-              );
-
-              const result = await response.json();
-
-              console.log(result);
-            }}
-            className="ml-4 bg-blue-600 text-white px-6 py-3 rounded"
-          >
-            Nueva ronda
-          </button>
-          
-
-          <button
-            onClick={async () => {
-              await fetch(
-                "/api/finish-game",
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type":
-                      "application/json",
-                  },
-                  body: JSON.stringify({
-                    gameId,
-                  }),
-                }
-              );
-            }}
-            className="ml-4 bg-black text-white px-6 py-3 rounded"
-          >
-            Finalizar partida
-          </button>
-
-        </>
+        <HostPanel
+          gameId={gameId}
+          roundId={activeRoundId}
+          currentTurn={currentTurn}
+          buzzCount={buzzes.length}
+          noMorePlayers={noMorePlayers}
+        />
       )}
-    
-      <h2 className="mt-8 text-lg font-bold">
-        Orden de respuesta
-      </h2>
 
-      <ol className="mt-3 space-y-1 border rounded p-3">
-        {buzzes.map((buzz, index) => {
-          const player = players.find(
-            (p) => p.user_id === buzz.user_id
-          );
-
-          const medal =
-            index === 0 ? "🥇" :
-            index === 1 ? "🥈" :
-            index === 2 ? "🥉" :
-            `${index + 1}.`;
-
-          const firstBuzzTime =
-            buzzes.length > 0
-              ? new Date(buzzes[0].pressed_at).getTime()
-              : 0;
-
-          const diffMs =
-            new Date(buzz.pressed_at).getTime() -
-            firstBuzzTime;
-
-          const diffText =
-            index === 0
-              ? "—"
-              : `+${(diffMs / 1000).toFixed(3)}s`;
-
-          const isCurrentTurn = index === currentTurn - 1;
-
-          return (
-            <li
-              key={buzz.id}
-              className={`flex justify-between items-center p-2 rounded ${
-                isCurrentTurn
-                  ? "font-bold bg-yellow-100 text-black p-2 rounded"
-                  : ""
-              }`}
-            >
-              <span>
-                {medal} {player?.display_name ?? "Jugador"}
-              </span>
-
-              <span className="text-gray-500">
-                {diffText}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
+      <BuzzOrder
+        players={players}
+        buzzes={buzzes}
+      />
     </div>
-  );
-}
+  );}
