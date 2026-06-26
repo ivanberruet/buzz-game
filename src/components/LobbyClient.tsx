@@ -427,16 +427,10 @@ export default function LobbyClient({
           {buzzes.length === 0
             ? "Esperando respuestas"
             : noMorePlayers
-            ? "No quedan participantes"
+            ? "Esperando nuevos buzzes..."
             : currentPlayer?.display_name}
         </strong>
       </div>
-
-      {noMorePlayers && (
-        <div className="mt-3 rounded bg-yellow-100 border border-yellow-300 p-3">
-          Esperando nuevos buzzes...
-        </div>
-      )}
 
       <h2 className="mt-6 text-lg font-bold">
         Clasificación General
