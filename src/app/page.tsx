@@ -1,6 +1,7 @@
 import LoginButton from "@/components/LoginButton";
 import { createClient } from "@/lib/supabase/server";
 import { createGame } from "@/actions/game-actions";
+import JoinGameForm from "@/components/JoinGameForm";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -35,20 +36,7 @@ export default async function HomePage() {
 
       <div>o</div>
 
-      <form action="/join">
-        <input
-          name="code"
-          placeholder="Código de partida"
-          className="border p-2 rounded uppercase"
-        />
-
-        <button
-          type="submit"
-          className="ml-2 bg-green-600 text-white px-4 py-2 rounded"
-        >
-          Unirse
-        </button>
-      </form>
+      <JoinGameForm />
 
     </main>
   );
