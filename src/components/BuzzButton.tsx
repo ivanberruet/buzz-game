@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   roundId: string;
@@ -12,6 +12,7 @@ export default function BuzzButton({
   alreadyBuzzed,
 }: Props) {
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   async function handleBuzz() {
     if (loading || alreadyBuzzed) return;
@@ -30,18 +31,23 @@ export default function BuzzButton({
       });
 
       await response.json();
+      setSubmitted(true);
     } finally {
       setLoading(false);
     }
   }
 
-  const enabled = !alreadyBuzzed && !loading;
+  const disabled = loading || alreadyBuzzed || submitted;
+
+  useEffect(() => {
+    setSubmitted(false);
+  }, [roundId]);
 
   return (
     <div className="flex justify-center my-10">
       <button
         onClick={handleBuzz}
-        disabled={!enabled}
+        disabled={disabled}
         className={`
           w-64
           h-64
@@ -54,8 +60,9 @@ export default function BuzzButton({
           duration-200
           select-none
           active:scale-95
+          hover:cursor-pointer
           ${
-            enabled
+            !disabled
               ? "bg-red-600 hover:bg-red-700 hover:scale-105 animate-buzz"
               : "bg-green-600 cursor-not-allowed opacity-90"
           }
@@ -63,7 +70,7 @@ export default function BuzzButton({
       >
         {loading
           ? "..."
-          : alreadyBuzzed
+          : alreadyBuzzed || submitted
           ? "✓"
           : "BUZZ"}
       </button>
