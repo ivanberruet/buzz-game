@@ -331,6 +331,8 @@ export default function LobbyClient({
     p.user_id === currentBuzz?.user_id
   );
 
+  const noMorePlayers = buzzes.length > 0 && currentTurn > buzzes.length;
+
   const leader = sortedScores[0];
 
   const leaderPlayer = players.find(
@@ -422,10 +424,19 @@ export default function LobbyClient({
       <div className="mt-6 p-4 border rounded bg-yellow-100 text-black">
         🎤 Respondiendo:
         <strong className="ml-2">
-          {currentPlayer?.display_name ??
-            "Esperando respuestas"}
+          {buzzes.length === 0
+            ? "Esperando respuestas"
+            : noMorePlayers
+            ? "No quedan participantes"
+            : currentPlayer?.display_name}
         </strong>
       </div>
+
+      {noMorePlayers && (
+        <div className="mt-3 rounded bg-yellow-100 border border-yellow-300 p-3">
+          Esperando nuevos buzzes...
+        </div>
+      )}
 
       <h2 className="mt-6 text-lg font-bold">
         Clasificación General
@@ -546,54 +557,88 @@ export default function LobbyClient({
 
       {isHost && (
         <>
-        <button
-          onClick={async () => {
-            const response = await fetch(
-              "/api/new-round",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  gameId,
-                  roundId: activeRoundId,
-                }),
-              }
-            );
+         {!noMorePlayers && buzzes.length >0 && (
+            <>
+              <button
+                onClick={async () => {
+                  await fetch("/api/incorrect", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type":
+                        "application/json",
+                    },
+                    body: JSON.stringify({
+                      roundId: activeRoundId,
+                    }),
+                  });
+                }}
+                className="ml-4 bg-yellow-600 text-white px-6 py-3 rounded"
+              >
+                Incorrecta
+              </button>
 
-            const result = await response.json();
+              <button
+                onClick={async () => {
+                  const response =
+                    await fetch(
+                      "/api/correct",
+                      {
+                        method: "POST",
+                        headers: {
+                          "Content-Type":
+                            "application/json",
+                        },
+                        body: JSON.stringify({
+                          gameId,
+                          roundId:
+                            activeRoundId,
+                        }),
+                      }
+                    );
 
-            console.log(result);
-          }}
-          className="ml-4 bg-blue-600 text-white px-6 py-3 rounded"
-        >
-          Nueva ronda
-        </button>
-        
-        <button
-          onClick={async () => {
-            await fetch("/api/incorrect", {
-              method: "POST",
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-              body: JSON.stringify({
-                roundId: activeRoundId,
-              }),
-            });
-          }}
-          className="ml-4 bg-yellow-600 text-white px-6 py-3 rounded"
-        >
-          Incorrecta
-        </button>
+                  const result =
+                    await response.json();
 
-        <button
-          onClick={async () => {
-            const response =
+                  console.log(result);
+                  console.log('CORRECT ROUND', activeRoundId)
+                }}
+                className="ml-4 bg-green-600 text-white px-6 py-3 rounded"
+              >
+                Correcta
+              </button>
+            </>
+         )}
+
+          <button
+            onClick={async () => {
+              const response = await fetch(
+                "/api/new-round",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    gameId,
+                    roundId: activeRoundId,
+                  }),
+                }
+              );
+
+              const result = await response.json();
+
+              console.log(result);
+            }}
+            className="ml-4 bg-blue-600 text-white px-6 py-3 rounded"
+          >
+            Nueva ronda
+          </button>
+          
+
+          <button
+            onClick={async () => {
               await fetch(
-                "/api/correct",
+                "/api/finish-game",
                 {
                   method: "POST",
                   headers: {
@@ -602,43 +647,14 @@ export default function LobbyClient({
                   },
                   body: JSON.stringify({
                     gameId,
-                    roundId:
-                      activeRoundId,
                   }),
                 }
               );
-
-            const result =
-              await response.json();
-
-            console.log(result);
-            console.log('CORRECT ROUND', activeRoundId)
-          }}
-          className="ml-4 bg-green-600 text-white px-6 py-3 rounded"
-        >
-          Correcta
-        </button>
-
-        <button
-          onClick={async () => {
-            await fetch(
-              "/api/finish-game",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type":
-                    "application/json",
-                },
-                body: JSON.stringify({
-                  gameId,
-                }),
-              }
-            );
-          }}
-          className="ml-4 bg-black text-white px-6 py-3 rounded"
-        >
-          Finalizar partida
-        </button>
+            }}
+            className="ml-4 bg-black text-white px-6 py-3 rounded"
+          >
+            Finalizar partida
+          </button>
 
         </>
       )}
